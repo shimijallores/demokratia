@@ -17,11 +17,11 @@ class PrecinctFactory extends Factory
 
         return [
             'precinct_code' => strtoupper(fake()->bothify('????-###')),
-            'name' => fake()->city() . ' Precinct ' . fake()->unique()->numberBetween(1, 999),
+            'name' => fake()->city().' Precinct '.fake()->unique()->numberBetween(1, 999),
             'region' => $region,
             'province' => fake()->city(),
             'municipality' => fake()->city(),
-            'barangay' => 'Barangay ' . fake()->lastName(),
+            'barangay' => 'Barangay '.fake()->lastName(),
             'registered_voters' => fake()->numberBetween(500, 3000),
             'api_key_hash' => bcrypt(fake()->unique()->lexify(64)),
             'aes_key_encrypted' => encrypt(fake()->lexify(32)),

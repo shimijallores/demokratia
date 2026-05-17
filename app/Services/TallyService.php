@@ -78,9 +78,19 @@ class TallyService
                     : [$selection['candidate_id']];
 
                 foreach ($candidateIds as $candidateId) {
+                    Candidate::firstOrCreate(
+                        ['id' => (int) $candidateId],
+                        [
+                            'name' => 'Candidate #'.$candidateId,
+                            'position' => $selection['position'],
+                            'party' => 'Unknown',
+                            'ballot_number' => (string) $candidateId,
+                        ]
+                    );
+
                     $votesToInsert[] = [
                         'batch_id' => $batch->id,
-                        'candidate_id' => $candidateId,
+                        'candidate_id' => (int) $candidateId,
                         'precinct_id' => $batch->precinct_id,
                         'position' => $selection['position'],
                         'created_at' => now(),
@@ -90,7 +100,7 @@ class TallyService
             }
         }
 
-        if (!empty($votesToInsert)) {
+        if (! empty($votesToInsert)) {
             DB::table('votes')->insert($votesToInsert);
         }
     }

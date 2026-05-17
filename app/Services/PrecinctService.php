@@ -12,31 +12,31 @@ class PrecinctService
     {
         $query = Precinct::query();
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('precinct_code', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('name', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('region', 'like', '%' . $filters['search'] . '%');
+                $q->where('precinct_code', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('region', 'like', '%'.$filters['search'].'%');
             });
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status']) && $filters['status'] !== 'all') {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['region'])) {
+        if (! empty($filters['region'])) {
             $query->where('region', $filters['region']);
         }
 
         return $query->latest()->paginate($perPage);
     }
 
-    public function create(array $data): Precinct
+    public function create(array $data): array
     {
         $apiKey = Str::random(64);
         $aesKey = bin2hex(random_bytes(32));
 
-        return Precinct::create([
+        $precinct = Precinct::create([
             'precinct_code' => $data['precinct_code'],
             'name' => $data['name'],
             'region' => $data['region'] ?? null,
@@ -48,6 +48,12 @@ class PrecinctService
             'aes_key_encrypted' => encrypt($aesKey),
             'status' => 'pending',
         ]);
+
+        return [
+            'precinct' => $precinct,
+            'api_key' => $apiKey,
+            'aes_key' => $aesKey,
+        ];
     }
 
     public function update(Precinct $precinct, array $data): Precinct

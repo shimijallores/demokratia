@@ -7,9 +7,7 @@ use App\Services\PrecinctService;
 
 class RegeneratePrecinctKeysAction
 {
-    public function __construct(protected PrecinctService $precinctService)
-    {
-    }
+    public function __construct(protected PrecinctService $precinctService) {}
 
     public function handle(Precinct $precinct): array
     {

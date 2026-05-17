@@ -7,9 +7,7 @@ use App\Services\PrecinctService;
 
 class UpdatePrecinctAction
 {
-    public function __construct(protected PrecinctService $precinctService)
-    {
-    }
+    public function __construct(protected PrecinctService $precinctService) {}
 
     public function handle(Precinct $precinct, array $data): Precinct
     {

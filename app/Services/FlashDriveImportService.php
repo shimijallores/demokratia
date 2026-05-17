@@ -13,8 +13,7 @@ class FlashDriveImportService
         protected EncryptionService $encryptionService,
         protected UploadSessionService $uploadSessionService,
         protected TallyService $tallyService,
-    ) {
-    }
+    ) {}
 
     public function import(Precinct $precinct, UploadedFile $file): array
     {
@@ -43,7 +42,7 @@ class FlashDriveImportService
 
         $payload = json_decode($decrypted, true);
 
-        if (!$payload || !isset($payload['batch_id'])) {
+        if (! $payload || ! isset($payload['batch_id'])) {
             Storage::disk('local')->delete($content);
 
             throw new \RuntimeException('Invalid .acm file format');
@@ -54,12 +53,12 @@ class FlashDriveImportService
         if ($existingBatch) {
             Storage::disk('local')->delete($content);
 
-            throw new \RuntimeException('Duplicate batch_id: ' . $payload['batch_id']);
+            throw new \RuntimeException('Duplicate batch_id: '.$payload['batch_id']);
         }
 
         $computedChecksum = $this->encryptionService->computeChecksum(json_encode($payload['ballots']));
 
-        if (!hash_equals($computedChecksum, $payload['checksum'])) {
+        if (! hash_equals($computedChecksum, $payload['checksum'])) {
             Storage::disk('local')->delete($content);
 
             throw new \RuntimeException('Checksum validation failed');

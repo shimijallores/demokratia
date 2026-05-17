@@ -8,9 +8,7 @@ use App\Services\UploadSessionService;
 
 class InitUploadSessionAction
 {
-    public function __construct(protected UploadSessionService $uploadSessionService)
-    {
-    }
+    public function __construct(protected UploadSessionService $uploadSessionService) {}
 
     public function handle(Precinct $precinct, array $data): UploadSession
     {

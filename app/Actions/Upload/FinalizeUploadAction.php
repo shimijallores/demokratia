@@ -17,8 +17,7 @@ class FinalizeUploadAction
         protected UploadSessionService $uploadSessionService,
         protected EncryptionService $encryptionService,
         protected TallyService $tallyService,
-    ) {
-    }
+    ) {}
 
     public function handle(UploadSession $session, string $checksum): Batch
     {
@@ -27,27 +26,24 @@ class FinalizeUploadAction
         $precinct = $session->precinct;
         $decrypted = $this->encryptionService->decrypt($precinct, $reassembled);
 
-        if (!$this->encryptionService->validateChecksum($decrypted, $checksum)) {
+        if (! $this->encryptionService->validateChecksum($decrypted, $checksum)) {
             throw new \RuntimeException('Checksum validation failed');
         }
 
         $payload = json_decode($decrypted, true);
 
-        if (!$payload || !isset($payload['batch_id'])) {
+        if (! is_array($payload) || empty($payload)) {
             throw new \RuntimeException('Invalid payload format');
         }
 
-        $existingBatch = Batch::where('id', $payload['batch_id'])->first();
-
-        if ($existingBatch) {
-            throw new \RuntimeException('Duplicate batch_id: ' . $payload['batch_id']);
-        }
-
         return DB::transaction(function () use ($session, $precinct, $payload, $checksum) {
+            $batchId = $session->batch_id;
+            $ballotCount = count($payload);
+
             $batch = $this->uploadSessionService->createBatch(
                 $precinct,
-                $payload['batch_id'],
-                $payload['ballot_count'],
+                $batchId,
+                $ballotCount,
                 $checksum,
                 'stream',
             );
@@ -57,7 +53,7 @@ class FinalizeUploadAction
                 'received_at' => now(),
             ]);
 
-            $this->tallyService->processBatch($batch, $payload['ballots']);
+            $this->tallyService->processBatch($batch, $payload);
 
             $batch->update(['status' => 'complete']);
 

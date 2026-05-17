@@ -15,7 +15,7 @@ class PrecinctApiAuth
         $apiKey = $request->bearerToken();
         $precinctCode = $request->header('X-Precinct-ID');
 
-        if (!$apiKey || !$precinctCode) {
+        if (! $apiKey || ! $precinctCode) {
             return response()->json([
                 'message' => 'Authentication required.',
             ], Response::HTTP_UNAUTHORIZED);
@@ -23,13 +23,13 @@ class PrecinctApiAuth
 
         $precinct = Precinct::where('precinct_code', $precinctCode)->first();
 
-        if (!$precinct) {
+        if (! $precinct) {
             return response()->json([
                 'message' => 'Invalid precinct.',
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        if (!Hash::check($apiKey, $precinct->api_key_hash)) {
+        if (! Hash::check($apiKey, $precinct->api_key_hash)) {
             return response()->json([
                 'message' => 'Invalid API key.',
             ], Response::HTTP_UNAUTHORIZED);

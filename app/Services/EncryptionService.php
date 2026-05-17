@@ -51,7 +51,7 @@ class EncryptionService
             $tag,
         );
 
-        return base64_encode($iv . $ciphertext);
+        return base64_encode($iv.$ciphertext);
     }
 
     public function computeChecksum(string $payload): string

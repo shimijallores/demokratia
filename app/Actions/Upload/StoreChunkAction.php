@@ -7,9 +7,7 @@ use App\Services\UploadSessionService;
 
 class StoreChunkAction
 {
-    public function __construct(protected UploadSessionService $uploadSessionService)
-    {
-    }
+    public function __construct(protected UploadSessionService $uploadSessionService) {}
 
     public function handle(UploadSession $session, int $chunkIndex, string $data): void
     {

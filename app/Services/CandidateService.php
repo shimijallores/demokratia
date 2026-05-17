@@ -12,19 +12,19 @@ class CandidateService
     {
         $query = Candidate::query();
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('party', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('ballot_number', 'like', '%' . $filters['search'] . '%');
+                $q->where('name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('party', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('ballot_number', 'like', '%'.$filters['search'].'%');
             });
         }
 
-        if (!empty($filters['position'])) {
+        if (! empty($filters['position'])) {
             $query->where('position', $filters['position']);
         }
 
-        if (!empty($filters['party'])) {
+        if (! empty($filters['party'])) {
             $query->where('party', $filters['party']);
         }
 
@@ -56,6 +56,7 @@ class CandidateService
     public function import(array $candidates): array
     {
         $imported = 0;
+        $updated = 0;
         $errors = [];
 
         foreach ($candidates as $index => $candidate) {
@@ -78,7 +79,12 @@ class CandidateService
                 ->first();
 
             if ($existing) {
-                $errors[$index] = ['ballot_number' => ['Duplicate ballot number for this position']];
+                $existing->update([
+                    'name' => $candidate['name'],
+                    'party' => $candidate['party'] ?? $existing->party,
+                    'photo_url' => $candidate['photo_url'] ?? $existing->photo_url,
+                ]);
+                $updated++;
 
                 continue;
             }
@@ -89,6 +95,7 @@ class CandidateService
 
         return [
             'imported' => $imported,
+            'updated' => $updated,
             'errors' => $errors,
         ];
     }
@@ -96,36 +103,135 @@ class CandidateService
     public function parseCsv(string $content): array
     {
         $lines = array_filter(array_map('trim', explode("\n", $content)));
-        $headers = array_map('trim', explode(',', array_shift($lines)));
 
-        $candidates = [];
+        if (empty($lines)) {
+            return [];
+        }
+
+        $firstLine = array_shift($lines);
+        $delimiter = $this->detectDelimiter($firstLine);
+        $rawHeaders = $this->parseDelimitedLine($firstLine, $delimiter);
+
+        $headerMap = [];
+        foreach ($rawHeaders as $header) {
+            $lower = strtolower($header);
+            if (in_array($lower, ['ballot_id', 'ballot id'])) {
+                $headerMap[$header] = 'ballot_id';
+            } elseif (in_array($lower, ['submitted_at', 'submitted at', 'timestamp', 'date'])) {
+                $headerMap[$header] = 'submitted_at';
+            } elseif (in_array($lower, ['position'])) {
+                $headerMap[$header] = 'position';
+            } elseif (in_array($lower, ['name', 'candidate'])) {
+                $headerMap[$header] = 'name';
+            } elseif (in_array($lower, ['party'])) {
+                $headerMap[$header] = 'party';
+            } elseif (in_array($lower, ['ballot_number', 'ballot number', 'ballotnumber'])) {
+                $headerMap[$header] = 'ballot_number';
+            } elseif (in_array($lower, ['photo_url', 'photo url', 'photourl', 'photo'])) {
+                $headerMap[$header] = 'photo_url';
+            }
+        }
+
+        $hasBallotId = in_array('ballot_id', $headerMap);
+        $rows = [];
 
         foreach ($lines as $line) {
-            $values = array_map('trim', explode(',', $line));
+            $values = $this->parseDelimitedLine($line, $delimiter);
 
-            if (count($values) < 3) {
+            if (count($values) < count($rawHeaders)) {
                 continue;
             }
 
-            $row = array_combine($headers, $values);
+            $row = array_combine($rawHeaders, $values);
+            $mapped = [];
 
-            $candidates[] = [
-                'ballot_number' => $row['ballot_number'] ?? '',
-                'name' => $row['name'] ?? '',
-                'position' => $this->normalizePosition($row['position'] ?? ''),
-                'party' => $row['party'] ?? null,
-                'photo_url' => !empty($row['photo_url']) ? $row['photo_url'] : null,
-            ];
+            foreach ($headerMap as $original => $normalized) {
+                $mapped[$normalized] = $row[$original] ?? '';
+            }
+
+            if ($hasBallotId) {
+                if (empty($mapped['ballot_id']) || empty($mapped['name']) || empty($mapped['position'])) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'ballot_id' => $mapped['ballot_id'],
+                    'submitted_at' => $mapped['submitted_at'] ?? null,
+                    'position' => $this->normalizePosition($mapped['position']),
+                    'candidate' => $mapped['name'],
+                    'party' => ! empty($mapped['party']) ? $mapped['party'] : null,
+                    'ballot_number' => ! empty($mapped['ballot_number']) ? $mapped['ballot_number'] : null,
+                ];
+            } else {
+                if (empty($mapped['ballot_number']) || empty($mapped['name']) || empty($mapped['position'])) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'ballot_number' => $mapped['ballot_number'],
+                    'name' => $mapped['name'],
+                    'position' => $this->normalizePosition($mapped['position']),
+                    'party' => ! empty($mapped['party']) ? $mapped['party'] : null,
+                    'photo_url' => ! empty($mapped['photo_url']) ? $mapped['photo_url'] : null,
+                ];
+            }
         }
 
-        return $candidates;
+        return $rows;
+    }
+
+    private function detectDelimiter(string $line): string
+    {
+        $tabCount = substr_count($line, "\t");
+        $commaCount = substr_count($line, ',');
+
+        return $tabCount > $commaCount ? "\t" : ',';
+    }
+
+    private function parseDelimitedLine(string $line, string $delimiter): array
+    {
+        if ($delimiter === ',') {
+            return $this->parseCsvLine($line);
+        }
+
+        return array_map('trim', explode($delimiter, $line));
+    }
+
+    private function parseCsvLine(string $line): array
+    {
+        $result = [];
+        $current = '';
+        $inQuotes = false;
+        $length = strlen($line);
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $line[$i];
+
+            if ($char === '"') {
+                if ($inQuotes && isset($line[$i + 1]) && $line[$i + 1] === '"') {
+                    $current .= '"';
+                    $i++;
+                } else {
+                    $inQuotes = ! $inQuotes;
+                }
+            } elseif ($char === ',' && ! $inQuotes) {
+                $result[] = trim($current);
+                $current = '';
+            } else {
+                $current .= $char;
+            }
+        }
+
+        $result[] = trim($current);
+
+        return $result;
     }
 
     public function parseJson(string $content): array
     {
         $data = json_decode($content, true);
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             return [];
         }
 

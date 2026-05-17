@@ -8,9 +8,7 @@ use App\Services\TallyService;
 
 class ProcessBatchAction
 {
-    public function __construct(protected TallyService $tallyService)
-    {
-    }
+    public function __construct(protected TallyService $tallyService) {}
 
     public function handle(Batch $batch, array $ballots): Batch
     {

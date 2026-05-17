@@ -6,7 +6,6 @@ use App\Models\Batch;
 use App\Models\Precinct;
 use App\Models\UploadSession;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class UploadSessionService
 {
@@ -34,7 +33,7 @@ class UploadSessionService
 
         $received = $session->received_chunks;
 
-        if (!in_array($chunkIndex, $received)) {
+        if (! in_array($chunkIndex, $received)) {
             $received[] = $chunkIndex;
             sort($received);
         }
@@ -53,7 +52,7 @@ class UploadSessionService
         for ($i = 0; $i < $session->total_chunks; $i++) {
             $path = "chunks/{$session->id}/{$i}.bin";
 
-            if (!Storage::disk('local')->exists($path)) {
+            if (! Storage::disk('local')->exists($path)) {
                 throw new \RuntimeException("Missing chunk {$i} for session {$session->id}");
             }
 
@@ -108,7 +107,7 @@ class UploadSessionService
     {
         $session = UploadSession::find($sessionId);
 
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
