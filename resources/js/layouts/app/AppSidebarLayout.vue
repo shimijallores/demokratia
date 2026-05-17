@@ -19,6 +19,7 @@ const navItems = computed(() => [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Results', href: '/results' },
     { title: 'Precincts', href: '/precincts' },
+    { title: 'Politicians', href: '/candidates' },
     { title: 'Import', href: '/import' },
     { title: 'Transmission Log', href: '/logs' },
     { title: 'Export', href: '/export' },
