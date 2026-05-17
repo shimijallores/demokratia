@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Batch;
 use App\Models\Candidate;
+use App\Models\Precinct;
 use App\Models\Vote;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,9 +20,9 @@ class TallyService
 
         $candidates = Candidate::orderBy('position')->orderBy('ballot_number')->get();
 
-        $totalVotes = Vote::count();
+        $totalRegisteredVoters = (int) Precinct::sum('registered_voters');
 
-        $results = $candidates->map(function ($candidate) use ($voteTally, $totalVotes) {
+        $results = $candidates->map(function ($candidate) use ($voteTally, $totalRegisteredVoters) {
             $key = $candidate->id.'-'.$candidate->position;
             $voteRow = $voteTally->get($key);
             $voteCount = $voteRow?->vote_count ?? 0;
@@ -34,7 +35,7 @@ class TallyService
                 'ballot_number' => $candidate->ballot_number,
                 'photo_url' => $candidate->photo_url,
                 'vote_count' => $voteCount,
-                'percentage' => $totalVotes > 0 ? round(($voteCount / $totalVotes) * 100, 2) : 0,
+                'percentage' => $totalRegisteredVoters > 0 ? round(($voteCount / $totalRegisteredVoters) * 100, 2) : 0,
             ];
         })
             ->groupBy('position')
@@ -63,9 +64,9 @@ class TallyService
             ->orderBy('ballot_number')
             ->get();
 
-        $positionTotal = Vote::where('position', $position)->count();
+        $totalRegisteredVoters = (int) Precinct::sum('registered_voters');
 
-        return $candidates->map(function ($candidate) use ($voteTally, $positionTotal) {
+        return $candidates->map(function ($candidate) use ($voteTally, $totalRegisteredVoters, $position) {
             $voteCount = $voteTally->get($candidate->id)?->vote_count ?? 0;
 
             return [
@@ -76,7 +77,7 @@ class TallyService
                 'ballot_number' => $candidate->ballot_number,
                 'photo_url' => $candidate->photo_url,
                 'vote_count' => $voteCount,
-                'percentage' => $positionTotal > 0 ? round(($voteCount / $positionTotal) * 100, 2) : 0,
+                'percentage' => $totalRegisteredVoters > 0 ? round(($voteCount / $totalRegisteredVoters) * 100, 2) : 0,
             ];
         })->sortByDesc('vote_count')->values();
     }
