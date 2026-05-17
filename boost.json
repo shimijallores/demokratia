@@ -1,7 +1,5 @@
 {
     "agents": [
-        "junie",
-        "cursor",
         "opencode"
     ],
     "cloud": false,
