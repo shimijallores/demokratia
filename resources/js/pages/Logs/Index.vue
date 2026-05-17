@@ -65,68 +65,66 @@ function handlePageChange(url: string | null) {
 <template>
     <Head title="Transmission Log" />
 
-    <div class="mx-auto w-full lg:w-[60%]">
-        <div class="flex h-full flex-1 flex-col gap-4 p-4">
-            <Card class="rounded-2xl ring-1 ring-border">
-                <CardHeader>
-                    <CardTitle>Transmission Log</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow class="h-12">
-                                <TableHead class="px-4">Timestamp</TableHead>
-                                <TableHead class="px-4">Precinct</TableHead>
-                                <TableHead class="px-4">Batch ID</TableHead>
-                                <TableHead class="px-4">Ballots</TableHead>
-                                <TableHead class="px-4">Mode</TableHead>
-                                <TableHead class="px-4">Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="batch in batches.data" :key="batch.id">
-                                <TableCell class="px-4 py-4">{{ new Date(batch.created_at).toLocaleString() }}</TableCell>
-                                <TableCell class="px-4 py-4">{{ batch.precinct.precinct_code }}</TableCell>
-                                <TableCell class="px-4 py-4 font-mono text-xs">{{ batch.id }}</TableCell>
-                                <TableCell class="px-4 py-4">{{ batch.ballot_count }}</TableCell>
-                                <TableCell class="px-4 py-4">
-                                    <Badge variant="outline">{{ batch.transmission_mode }}</Badge>
-                                </TableCell>
-                                <TableCell class="px-4 py-4">
-                                    <Badge :class="statusBadgeClass(batch.status)">{{ batch.status }}</Badge>
-                                </TableCell>
-                            </TableRow>
-                            <TableRow v-if="batches.data.length === 0">
-                                <TableCell colspan="6" class="text-center">No transmissions yet.</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
+    <div class="flex h-full flex-1 flex-col gap-4 p-4">
+        <Card class="rounded-2xl ring-1 ring-border">
+            <CardHeader>
+                <CardTitle>Transmission Log</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow class="h-12">
+                            <TableHead class="px-4">Timestamp</TableHead>
+                            <TableHead class="px-4">Precinct</TableHead>
+                            <TableHead class="px-4">Batch ID</TableHead>
+                            <TableHead class="px-4">Ballots</TableHead>
+                            <TableHead class="px-4">Mode</TableHead>
+                            <TableHead class="px-4">Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow v-for="batch in batches.data" :key="batch.id">
+                            <TableCell class="px-4 py-4">{{ new Date(batch.created_at).toLocaleString() }}</TableCell>
+                            <TableCell class="px-4 py-4">{{ batch.precinct.precinct_code }}</TableCell>
+                            <TableCell class="px-4 py-4 font-mono text-xs">{{ batch.id }}</TableCell>
+                            <TableCell class="px-4 py-4">{{ batch.ballot_count }}</TableCell>
+                            <TableCell class="px-4 py-4">
+                                <Badge variant="outline">{{ batch.transmission_mode }}</Badge>
+                            </TableCell>
+                            <TableCell class="px-4 py-4">
+                                <Badge :class="statusBadgeClass(batch.status)">{{ batch.status }}</Badge>
+                            </TableCell>
+                        </TableRow>
+                        <TableRow v-if="batches.data.length === 0">
+                            <TableCell colspan="6" class="text-center">No transmissions yet.</TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
 
-                    <div class="mt-4 flex items-center justify-between">
-                        <p class="text-sm text-muted-foreground">
-                            Showing {{ batches.total }} transmission(s)
-                        </p>
-                        <div class="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="!batches.prev_page_url"
-                                @click="handlePageChange(batches.prev_page_url)"
-                            >
-                                Previous
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="!batches.next_page_url"
-                                @click="handlePageChange(batches.next_page_url)"
-                            >
-                                Next
-                            </Button>
-                        </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <p class="text-sm text-muted-foreground">
+                        Showing {{ batches.total }} transmission(s)
+                    </p>
+                    <div class="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!batches.prev_page_url"
+                            @click="handlePageChange(batches.prev_page_url)"
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!batches.next_page_url"
+                            @click="handlePageChange(batches.next_page_url)"
+                        >
+                            Next
+                        </Button>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                </div>
+            </CardContent>
+        </Card>
     </div>
 </template>

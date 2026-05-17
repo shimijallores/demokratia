@@ -88,73 +88,71 @@ function submitCsv() {
 <template>
     <Head title="Import" />
 
-    <div class="mx-auto w-full lg:w-[60%]">
-        <div class="flex h-full flex-1 flex-col gap-4 p-4">
-            <div v-if="flashMessage" class="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800 ring-1 ring-emerald-200">
-                {{ flashMessage }}
-            </div>
-
-            <div v-if="importErrors.length > 0" class="rounded-lg bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-200">
-                <p class="font-medium mb-2">Import Errors:</p>
-                <ul class="list-disc pl-5 space-y-1">
-                    <li v-for="(error, index) in importErrors" :key="index">{{ error }}</li>
-                </ul>
-            </div>
-
-            <Card class="rounded-2xl ring-1 ring-border max-w-lg">
-                <CardHeader>
-                    <CardTitle>Import CSV</CardTitle>
-                    <CardDescription>Upload a CSV file to import votes or candidates. Ballot CSVs need columns: Ballot ID, Position, Candidate, Party, Ballot Number. Candidate CSVs need: ballot_number, name, position, party.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form @submit.prevent="submitCsv" class="space-y-4">
-                        <div class="grid gap-2">
-                            <Label for="csv-file">CSV File</Label>
-                            <Input id="csv-file" type="file" accept=".csv,.txt" @change="handleCsvFileChange" />
-                            <InputError :message="csvForm.errors.file" />
-                        </div>
-
-                        <Button type="submit" :disabled="csvForm.processing || !csvForm.file">
-                            Import CSV
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
-
-            <Card class="rounded-2xl ring-1 ring-border max-w-lg">
-                <CardHeader>
-                    <CardTitle>Import Flash Drive</CardTitle>
-                    <CardDescription>Upload a .acm file from a flash drive to import vote data.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form @submit.prevent="submitFlash" class="space-y-4">
-                        <div class="grid gap-2">
-                            <Label for="precinct_code">Precinct</Label>
-                            <Select v-model="flashForm.precinct_code">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select precinct" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="precinct in precincts" :key="precinct.id" :value="precinct.precinct_code">
-                                        {{ precinct.precinct_code }} - {{ precinct.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <InputError :message="flashForm.errors.precinct_code" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label for="file">.acm File</Label>
-                            <Input id="file" type="file" accept=".acm,.bin" @change="handleFlashFileChange" />
-                            <InputError :message="flashForm.errors.file" />
-                        </div>
-
-                        <Button type="submit" :disabled="flashForm.processing || !flashForm.file">
-                            Import File
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
+    <div class="flex h-full flex-1 flex-col gap-4 p-4">
+        <div v-if="flashMessage" class="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800 ring-1 ring-emerald-200">
+            {{ flashMessage }}
         </div>
+
+        <div v-if="importErrors.length > 0" class="rounded-lg bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-200">
+            <p class="font-medium mb-2">Import Errors:</p>
+            <ul class="list-disc pl-5 space-y-1">
+                <li v-for="(error, index) in importErrors" :key="index">{{ error }}</li>
+            </ul>
+        </div>
+
+        <Card class="rounded-2xl ring-1 ring-border max-w-lg">
+            <CardHeader>
+                <CardTitle>Import CSV</CardTitle>
+                <CardDescription>Upload a CSV file to import votes or candidates. Ballot CSVs need columns: Ballot ID, Position, Candidate, Party, Ballot Number. Candidate CSVs need: ballot_number, name, position, party.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form @submit.prevent="submitCsv" class="space-y-4">
+                    <div class="grid gap-2">
+                        <Label for="csv-file">CSV File</Label>
+                        <Input id="csv-file" type="file" accept=".csv,.txt" @change="handleCsvFileChange" />
+                        <InputError :message="csvForm.errors.file" />
+                    </div>
+
+                    <Button type="submit" :disabled="csvForm.processing || !csvForm.file">
+                        Import CSV
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
+
+        <Card class="rounded-2xl ring-1 ring-border max-w-lg">
+            <CardHeader>
+                <CardTitle>Import Flash Drive</CardTitle>
+                <CardDescription>Upload a .acm file from a flash drive to import vote data.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form @submit.prevent="submitFlash" class="space-y-4">
+                    <div class="grid gap-2">
+                        <Label for="precinct_code">Precinct</Label>
+                        <Select v-model="flashForm.precinct_code">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select precinct" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="precinct in precincts" :key="precinct.id" :value="precinct.precinct_code">
+                                    {{ precinct.precinct_code }} - {{ precinct.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <InputError :message="flashForm.errors.precinct_code" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="file">.acm File</Label>
+                        <Input id="file" type="file" accept=".acm,.bin" @change="handleFlashFileChange" />
+                        <InputError :message="flashForm.errors.file" />
+                    </div>
+
+                    <Button type="submit" :disabled="flashForm.processing || !flashForm.file">
+                        Import File
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     </div>
 </template>

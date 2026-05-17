@@ -65,98 +65,96 @@ const precinctStatusColor = (status: string) => {
 <template>
     <Head title="Results" />
 
-    <div class="mx-auto w-full lg:w-[60%]">
-        <div class="flex h-full flex-1 flex-col gap-4 p-4">
-            <Tabs default-value="president">
-                <div class="flex items-center justify-between">
-                    <TabsList>
-                        <TabsTrigger v-for="position in positions" :key="position" :value="position">
-                            {{ positionLabels[position] }}
-                        </TabsTrigger>
-                    </TabsList>
+    <div class="flex h-full flex-1 flex-col gap-4 p-4">
+        <Tabs default-value="president">
+            <div class="flex items-center justify-between">
+                <TabsList>
+                    <TabsTrigger v-for="position in positions" :key="position" :value="position">
+                        {{ positionLabels[position] }}
+                    </TabsTrigger>
+                </TabsList>
+            </div>
+
+            <TabsContent v-for="position in positions" :key="position" :value="position" class="mt-4">
+                <Card class="rounded-2xl ring-1 ring-border">
+                    <CardHeader>
+                        <CardTitle>{{ positionLabels[position] }} Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow class="h-12">
+                                    <TableHead class="w-[60px] px-4">Rank</TableHead>
+                                    <TableHead class="px-4">Candidate</TableHead>
+                                    <TableHead class="px-4">Party</TableHead>
+                                    <TableHead class="px-4 text-right">Votes</TableHead>
+                                    <TableHead class="w-[200px] px-4">% of Votes</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="(candidate, index) in tally[position]" :key="candidate.candidate_id">
+                                    <TableCell class="px-4 py-4 font-bold">{{ index + 1 }}</TableCell>
+                                    <TableCell class="px-4 py-4 font-medium">{{ candidate.name }}</TableCell>
+                                    <TableCell class="px-4 py-4">{{ candidate.party }}</TableCell>
+                                    <TableCell class="px-4 py-4 text-right">{{ candidate.vote_count.toLocaleString() }}</TableCell>
+                                    <TableCell class="px-4 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <Progress :model-value="candidate.percentage" class="h-2" />
+                                            <span class="text-sm">{{ candidate.percentage }}%</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow v-if="!tally[position] || tally[position].length === 0">
+                                    <TableCell colspan="5" class="text-center">No votes counted yet.</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
+
+        <Card class="rounded-2xl ring-1 ring-border">
+            <CardHeader>
+                <CardTitle>Precinct Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div class="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
+                    <button
+                        v-for="precinct in precincts"
+                        :key="precinct.id"
+                        class="flex flex-col items-center gap-1 rounded-lg border p-2 text-center hover:bg-muted"
+                        @click="selectedPrecinct = precinct"
+                    >
+                        <div :class="['h-3 w-3 rounded-full', precinctStatusColor(precinct.status)]" />
+                        <span class="text-xs">{{ precinct.precinct_code }}</span>
+                    </button>
                 </div>
 
-                <TabsContent v-for="position in positions" :key="position" :value="position" class="mt-4">
-                    <Card class="rounded-2xl ring-1 ring-border">
-                        <CardHeader>
-                            <CardTitle>{{ positionLabels[position] }} Results</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow class="h-12">
-                                        <TableHead class="w-[60px] px-4">Rank</TableHead>
-                                        <TableHead class="px-4">Candidate</TableHead>
-                                        <TableHead class="px-4">Party</TableHead>
-                                        <TableHead class="px-4 text-right">Votes</TableHead>
-                                        <TableHead class="w-[200px] px-4">% of Votes</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow v-for="(candidate, index) in tally[position]" :key="candidate.candidate_id">
-                                        <TableCell class="px-4 py-4 font-bold">{{ index + 1 }}</TableCell>
-                                        <TableCell class="px-4 py-4 font-medium">{{ candidate.name }}</TableCell>
-                                        <TableCell class="px-4 py-4">{{ candidate.party }}</TableCell>
-                                        <TableCell class="px-4 py-4 text-right">{{ candidate.vote_count.toLocaleString() }}</TableCell>
-                                        <TableCell class="px-4 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <Progress :model-value="candidate.percentage" class="h-2" />
-                                                <span class="text-sm">{{ candidate.percentage }}%</span>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="!tally[position] || tally[position].length === 0">
-                                        <TableCell colspan="5" class="text-center">No votes counted yet.</TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-
-            <Card class="rounded-2xl ring-1 ring-border">
-                <CardHeader>
-                    <CardTitle>Precinct Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div class="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
-                        <button
-                            v-for="precinct in precincts"
-                            :key="precinct.id"
-                            class="flex flex-col items-center gap-1 rounded-lg border p-2 text-center hover:bg-muted"
-                            @click="selectedPrecinct = precinct"
-                        >
-                            <div :class="['h-3 w-3 rounded-full', precinctStatusColor(precinct.status)]" />
-                            <span class="text-xs">{{ precinct.precinct_code }}</span>
-                        </button>
+                <div class="mt-4 flex gap-4 text-sm">
+                    <div class="flex items-center gap-1">
+                        <div class="h-3 w-3 rounded-full bg-green-500" />
+                        <span>Complete</span>
                     </div>
-
-                    <div class="mt-4 flex gap-4 text-sm">
-                        <div class="flex items-center gap-1">
-                            <div class="h-3 w-3 rounded-full bg-green-500" />
-                            <span>Complete</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <div class="h-3 w-3 rounded-full bg-yellow-500" />
-                            <span>Transmitting</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <div class="h-3 w-3 rounded-full bg-blue-500" />
-                            <span>Partial</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <div class="h-3 w-3 rounded-full bg-gray-400" />
-                            <span>Pending</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <div class="h-3 w-3 rounded-full bg-red-500" />
-                            <span>Error</span>
-                        </div>
+                    <div class="flex items-center gap-1">
+                        <div class="h-3 w-3 rounded-full bg-yellow-500" />
+                        <span>Transmitting</span>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                    <div class="flex items-center gap-1">
+                        <div class="h-3 w-3 rounded-full bg-blue-500" />
+                        <span>Partial</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="h-3 w-3 rounded-full bg-gray-400" />
+                        <span>Pending</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="h-3 w-3 rounded-full bg-red-500" />
+                        <span>Error</span>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     </div>
 
     <Sheet v-model:open="selectedPrecinct">
