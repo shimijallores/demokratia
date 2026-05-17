@@ -16,14 +16,14 @@ class TallyService
         $voteTally = Vote::selectRaw('candidate_id, position, COUNT(*) as vote_count')
             ->groupBy('candidate_id', 'position')
             ->get()
-            ->keyBy(fn ($row) => $row->candidate_id.'-'.$row->position);
+            ->keyBy(fn($row) => $row->candidate_id . '-' . $row->position);
 
         $candidates = Candidate::orderBy('position')->orderBy('ballot_number')->get();
 
         $totalRegisteredVoters = (int) Precinct::sum('registered_voters');
 
         $results = $candidates->map(function ($candidate) use ($voteTally, $totalRegisteredVoters) {
-            $key = $candidate->id.'-'.$candidate->position;
+            $key = $candidate->id . '-' . $candidate->position;
             $voteRow = $voteTally->get($key);
             $voteCount = $voteRow?->vote_count ?? 0;
 
@@ -96,7 +96,7 @@ class TallyService
                     Candidate::firstOrCreate(
                         ['id' => (int) $candidateId],
                         [
-                            'name' => 'Candidate #'.$candidateId,
+                            'name' => 'Candidate #' . $candidateId,
                             'position' => $selection['position'],
                             'party' => 'Unknown',
                             'ballot_number' => (string) $candidateId,
