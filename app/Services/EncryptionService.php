@@ -12,7 +12,8 @@ class EncryptionService
         $binary = base64_decode($encryptedPayload);
 
         $iv = substr($binary, 0, 12);
-        $ciphertext = substr($binary, 12);
+        $tag = substr($binary, -16);
+        $ciphertext = substr($binary, 12, -16);
 
         $decrypted = openssl_decrypt(
             $ciphertext,
@@ -51,7 +52,7 @@ class EncryptionService
             $tag,
         );
 
-        return base64_encode($iv.$ciphertext);
+        return base64_encode($iv.$ciphertext.$tag);
     }
 
     public function computeChecksum(string $payload): string

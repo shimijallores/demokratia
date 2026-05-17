@@ -9,6 +9,7 @@ use App\Models\UploadSession;
 use App\Services\EncryptionService;
 use App\Services\TallyService;
 use App\Services\UploadSessionService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class FinalizeUploadAction
@@ -58,6 +59,8 @@ class FinalizeUploadAction
             $batch->update(['status' => 'complete']);
 
             $this->updatePrecinctStatus($precinct);
+
+            Cache::forget('election_tally');
 
             RecalculateTallyJob::dispatch();
 

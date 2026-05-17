@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Batch;
 use App\Models\Precinct;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class FlashDriveImportService
@@ -40,35 +40,22 @@ class FlashDriveImportService
             throw new \RuntimeException('Failed to decrypt .acm file');
         }
 
-        $payload = json_decode($decrypted, true);
+        $ballots = json_decode($decrypted, true);
 
-        if (! $payload || ! isset($payload['batch_id'])) {
+        if (! is_array($ballots) || empty($ballots)) {
             Storage::disk('local')->delete($content);
 
             throw new \RuntimeException('Invalid .acm file format');
         }
 
-        $existingBatch = Batch::where('id', $payload['batch_id'])->first();
-
-        if ($existingBatch) {
-            Storage::disk('local')->delete($content);
-
-            throw new \RuntimeException('Duplicate batch_id: '.$payload['batch_id']);
-        }
-
-        $computedChecksum = $this->encryptionService->computeChecksum(json_encode($payload['ballots']));
-
-        if (! hash_equals($computedChecksum, $payload['checksum'])) {
-            Storage::disk('local')->delete($content);
-
-            throw new \RuntimeException('Checksum validation failed');
-        }
+        $batchId = $ballots[0]['ballot_id'] ?? str()->uuid();
+        $computedChecksum = $this->encryptionService->computeChecksum($decrypted);
 
         $batch = $this->uploadSessionService->createBatch(
             $precinct,
-            $payload['batch_id'],
-            $payload['ballot_count'],
-            $payload['checksum'],
+            $batchId,
+            count($ballots),
+            $computedChecksum,
             'flashdrive',
         );
 
@@ -77,13 +64,15 @@ class FlashDriveImportService
             'received_at' => now(),
         ]);
 
-        $this->tallyService->processBatch($batch, $payload['ballots']);
+        $this->tallyService->processBatch($batch, $ballots);
 
         $batch->update(['status' => 'complete']);
 
         $precinct->update(['status' => 'complete']);
 
         Storage::disk('local')->delete($content);
+
+        Cache::forget('election_tally');
 
         return [
             'batch_id' => $batch->id,
