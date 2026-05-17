@@ -12,8 +12,8 @@ use App\Services\FlashDriveImportService;
 use App\Services\PrecinctService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,12 +47,55 @@ class ImportController extends Controller
     public function importCsv(Request $request, CandidateService $candidateService, ImportCandidatesAction $action): RedirectResponse
     {
         $validated = $request->validate([
-            'file' => 'required|file|mimes:csv,txt',
+            'file' => 'required|file',
         ]);
 
-        $content = Storage::disk('local')->get($request->file('file')->store('imports'));
+        $filePath = $request->file('file')->store('imports');
+        $content = Storage::disk('local')->get($filePath);
+
+        if (! str_contains($content, 'Ballot ID')) {
+            $decrypted = null;
+            $precincts = Precinct::all();
+
+            foreach ($precincts as $p) {
+                try {
+                    $key = decrypt($p->aes_key_encrypted);
+                    $binary = base64_decode($content);
+
+                    $iv = substr($binary, 0, 12);
+                    $tag = substr($binary, -16);
+                    $ciphertext = substr($binary, 12, -16);
+
+                    $dec = openssl_decrypt(
+                        $ciphertext,
+                        'aes-256-gcm',
+                        hex2bin($key),
+                        OPENSSL_RAW_DATA,
+                        $iv,
+                        $tag
+                    );
+
+                    if ($dec !== false) {
+                        $decrypted = $dec;
+                        break;
+                    }
+                } catch (\Exception $e) {
+                    // Try next precinct
+                }
+            }
+
+            if (! $decrypted) {
+                Storage::disk('local')->delete($filePath);
+
+                return back()->withErrors(['file' => 'Failed to decrypt encrypted CSV file. Ensure the correct AES key is configured.']);
+            }
+
+            $content = $decrypted;
+        }
 
         $parsed = $candidateService->parseCsv($content);
+
+        Storage::disk('local')->delete($filePath);
 
         if (empty($parsed)) {
             return back()->withErrors(['file' => 'No valid data found in file']);

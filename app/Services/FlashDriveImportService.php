@@ -20,24 +20,12 @@ class FlashDriveImportService
         $content = Storage::disk('local')->putFileAs('imports', $file, $file->getClientOriginalName());
         $binary = Storage::disk('local')->get($content);
 
-        $iv = substr($binary, 0, 12);
-        $ciphertext = substr($binary, 12);
-
-        $aesKey = decrypt($precinct->aes_key_encrypted);
-
-        $decrypted = openssl_decrypt(
-            $ciphertext,
-            'aes-256-gcm',
-            hex2bin($aesKey),
-            OPENSSL_RAW_DATA,
-            $iv,
-            $tag,
-        );
-
-        if ($decrypted === false) {
+        try {
+            $decrypted = $this->encryptionService->decrypt($precinct, base64_encode($binary));
+        } catch (\Exception $e) {
             Storage::disk('local')->delete($content);
 
-            throw new \RuntimeException('Failed to decrypt .acm file');
+            throw new \RuntimeException('Failed to decrypt .acm file: '.$e->getMessage());
         }
 
         $ballots = json_decode($decrypted, true);
